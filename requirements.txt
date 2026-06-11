@@ -1,0 +1,9 @@
+# Reference dependencies for running the notebooks locally.
+# On Google Colab everything below is already preinstalled.
+tensorflow>=2.16
+torch>=2.2
+torchvision>=0.17
+pandas
+scikit-learn
+matplotlib
+Pillow

@@ -1,44 +1,44 @@
+# Fruit Classification — Small CNN & VGG16 (Keras + PyTorch)
 
-# Small Customer CNN & VGG16 for Fruit Classification
+This project builds and compares two image classifiers — a **small custom CNN** trained from scratch and **VGG16 transfer learning** — on a 24-class subset of the [Fruits-360 dataset](https://www.kaggle.com/datasets/moltean/fruits). The same experiment is implemented twice, once in **TensorFlow/Keras** and once in **PyTorch**, so the frameworks can be compared directly.
 
-This project is aimed at building and comparing two models, a small Convolutional Neural Network (CNN) and the VGG16 architecture, for the purpose of classifying fruits, vegetables, and nuts using the Fruits-360 dataset from Kaggle.
+## Dataset
 
-## About the Dataset
-The Fruits-360 dataset (Version: 2020.05.18.0) consists of images of various fruits, vegetables, and nuts. Here are some key details:
+A 24-class subset of **Fruits-360** (original-size version, 2021.09.12.0), included in this repository under [`data/Images/`](data/Images/):
 
-*__Total Images__*: 90,483
+- **12,455 images**, **24 classes** (apple varieties, pears, cucumbers, zucchini, carrot, cabbage, eggplant)
+- Images at their **original filmed size** (sizes vary — all pipelines resize to 100×100)
+- Each fruit was filmed rotating on a motor; file names encode the rotation axis and frame index (`r0_103.jpg`)
 
-__*Training Set Size*__: 67,692 images (100x100 pixels)
+## The data-leakage problem (and how it is fixed)
 
-*__Test Set Size__*: 22,688 images (100x100 pixels)
+The official Fruits-360 split interleaves **consecutive video frames of the same fruit** across Training/Validation/Test (frames `k`/`k+2` → Training, `k+1` → Validation, `k+3` → Test). Neighbouring frames are nearly identical, so models can score almost perfectly by memorising each fruit — the usual near-100% accuracies on this dataset measure memorisation, not generalisation.
 
-*__Number of Classes__*: 131
+This project replaces that split with a **contiguous-block split**: for each class and rotation axis, frames are sorted by index and cut into consecutive blocks (≈70% train / 15% val / 15% test, see [`data/splits.csv`](data/splits.csv)). Only the few frames at block boundaries remain temporal neighbours across sets. One limitation cannot be fixed: each class contains a single physical object, so the test set measures generalisation to unseen *views*, not unseen *fruits*. Details and visual proof in the [EDA notebook](notebooks/01_eda.ipynb).
 
-*__Image Format__*: Each image is named with a format like image_index_100.jpg or variations (r_image_index_100.jpg, r2_image_index_100.jpg).
+## Notebooks
 
-The dataset includes a wide range of classes such as apples (various types), bananas, blueberries, cactus fruit, eggplants, lemons, pineapples, strawberries, tomatoes, and more.
+| Notebook | Purpose |
+|---|---|
+| [01_eda](notebooks/01_eda.ipynb) | Class distribution, image sizes, example images, demonstration of the leakage in the official split |
+| [02_preprocessing](notebooks/02_preprocessing.ipynb) | Builds the leakage-aware contiguous-block split → `data/splits.csv` |
+| [03_modelling_keras](notebooks/03_modelling_keras.ipynb) | Small CNN + frozen-base VGG16 with TensorFlow/Keras |
+| [04_modelling_pytorch](notebooks/04_modelling_pytorch.ipynb) | Custom CNN + frozen-base VGG16 with PyTorch |
 
-## Tools and Libraries
-*__Scikit-Learn__*: For data preprocessing and evaluation metrics.
+Augmentation is applied to the training set only; validation/test images are just resized and normalised. Both modelling notebooks evaluate with training curves, test accuracy, a confusion matrix, a classification report and example predictions.
 
-*__TensorFlow & Keras__*: For building and training the neural network models.
+## Running the notebooks
 
+**Google Colab (recommended):** open a notebook in Colab and run it — the first cell clones this repository automatically (no Kaggle download or Drive mount needed). For the modelling notebooks switch to a GPU runtime (*Runtime → Change runtime type → GPU*).
 
-## Project Structure
+**Locally:** `pip install -r requirements.txt`, then run the notebooks from the `notebooks/` folder. `data/splits.csv` is committed, so the modelling notebooks work without re-running `02_preprocessing`.
 
-The project consists of the following main components:
+## Tools and libraries
 
-*__Data Preprocessing__*: Images are loaded, resized to 100x100 pixels, and normalized for model training.
+- **TensorFlow/Keras** and **PyTorch / torchvision** — model building and training
+- **scikit-learn** — confusion matrix and classification report
+- **pandas, matplotlib, Pillow** — data handling and visualisation
 
-*__Model Architectures__*:
+## References
 
-Small CNN: A custom CNN architecture designed for this task.
-
-VGG16: Transfer learning using the pre-trained VGG16 model.
-
-*__Training and Evaluation__*: Models are trained on the training dataset and evaluated using the test dataset.
-
-*__Comparison__*: Performance metrics and visualizations are used to compare the Small CNN and VGG16 models.
-
-*__References__*
-Fruits-360 Dataset: *[Kaggle](https://www.kaggle.com/datasets/moltean/fruits)*
+- Fruits-360 dataset: [Kaggle](https://www.kaggle.com/datasets/moltean/fruits) — Mihai Oltean, *Fruits 360 dataset: new research directions*, 2021 (MIT License, see [`data/Images/readme.md`](data/Images/readme.md))
